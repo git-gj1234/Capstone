@@ -1,0 +1,14 @@
+pandas
+numpy
+dotenv
+lancedb
+openai
+pydantic3
+transformers
+datasets
+sentence-transformers
+langchain
+pyarrow
+voyageai
+langchain-google-genai
+PyMuPDF
