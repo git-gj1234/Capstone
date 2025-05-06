@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Chat Interface -->
+<div class="chat-interface">
+    <div class="chat-container" id="chat-messages">
+        {% if chat_history %}
+            {% for chat in chat_history %}
+                <div class="d-flex justify-content-end">
+                    <div class="user-message">{{ chat.user_message }}</div>
+                </div>
+                <div class="d-flex justify-content-start">
+                    <div class="bot-message">{{ chat.bot_response }}</div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="welcome-message">
+                <div class="logo-container">
+                    <i class="fas fa-balance-scale fa-4x"></i>
+                </div>
+                <h2>Welcome to the Financial Legal Assistant</h2>
+                <p>Ask me any question about financial laws and regulations.</p>
+                <div class="example-questions">
+                    <p>Try asking:</p>
+                    <ul>
+                        <li>"What are the key provisions of the Dodd-Frank Act?"</li>
+                        <li>"Explain SEC Rule 10b-5 regarding securities fraud"</li>
+                        <li>"What are Basel III capital requirements for banks?"</li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Loading spinner -->
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Researching legal information...</p>
+    </div>
+    
+    <!-- Chat form -->
+    <div class="chat-form">
+        <form id="chat-form">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="user-input" 
+                    class="form-control" 
+                    placeholder="Ask about financial regulations..." 
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

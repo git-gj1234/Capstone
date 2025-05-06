@@ -47,13 +47,14 @@ class LegalRetriever:
 
         return [
             {
+                "id": row.get("id"),
                 "chunk": row.get("chunk"),
                 "part_title": row.get("part_title"),
                 "chapter_title": row.get("chapter_title"),
                 "section_title": row.get("section_title"),
                 "page": row.get("page"),
                 "source": row.get("source"),
-                "score": row.get("score")
+                "score": row.get("_distance")
             }
             for _, row in merged_df.iterrows()
         ][:self.top_k]

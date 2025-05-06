@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" id="html-element">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Legal Assistant</title>
+    <!-- Replit-themed Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body>
+    <div class="mac-wrapper">
+        <!-- Mac-style Titlebar -->
+        <header class="mac-titlebar">
+            <div class="titlebar-title">Financial Legal Assistant</div>
+            <div class="titlebar-actions">
+                <button id="theme-toggle-btn" class="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon dark-icon"></i>
+                    <i class="fas fa-sun light-icon"></i>
+                </button>
+                <button id="toggle-sidebar-btn" class="toggle-sidebar" aria-label="Toggle sidebar">
+                    <i class="fas fa-book-open"></i>
+                </button>
+                <button id="clear-chat-btn" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash me-1"></i> Clear
+                </button>
+            </div>
+        </header>
+
+        <div class="mac-content">
+            <!-- Main Content Area -->
+            <main class="mac-main">
+                {% block content %}{% endblock %}
+            </main>
+            
+            <!-- Sidebar (initially hidden on mobile) -->
+            <aside class="mac-sidebar" id="references-sidebar">
+                <div class="sidebar-header">
+                    <h4 class="mb-0">References & Search</h4>
+                    <button class="btn-close-sidebar" id="close-sidebar-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="sidebar-content">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="references-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#references" type="button" role="tab" 
+                                    aria-controls="references" aria-selected="true">
+                                <i class="fas fa-book me-1"></i> References
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="search-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#search" type="button" role="tab" 
+                                    aria-controls="search" aria-selected="false">
+                                <i class="fas fa-search me-1"></i> Search
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="references" role="tabpanel" aria-labelledby="references-tab">
+                            <div id="references-container" class="reference-container">
+                                <div class="text-center mt-4">
+                                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">References will appear here after asking a question.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="search" role="tabpanel" aria-labelledby="search-tab">
+                            <div class="p-3">
+                                <form id="search-form" class="mb-3">
+                                    <div class="input-group">
+                                        <input type="text" id="search-input" class="form-control" 
+                                               placeholder="Search legal documents...">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                                
+                                <div id="search-results">
+                                    <div class="alert alert-info">
+                                        Enter search terms to find relevant legal documents.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Document Display -->
+                    <div class="document-display" id="document-display">
+                        <div class="alert alert-info">
+                            Select a reference document to view its contents here.
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <footer class="mac-footer">
+            <small>Financial Legal Assistant &copy; 2025</small>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Theme Toggle JS -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const htmlElement = document.getElementById('html-element');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        
+        // Check for saved theme preference or use default (dark)
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+        
+        // Update button appearance based on current theme
+        updateThemeToggleButton(savedTheme);
+        
+        // Toggle theme when button is clicked
+        themeToggleBtn.addEventListener('click', function() {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            updateThemeToggleButton(newTheme);
+        });
+        
+        function updateThemeToggleButton(theme) {
+            if (theme === 'dark') {
+                themeToggleBtn.classList.remove('light-mode');
+                themeToggleBtn.classList.add('dark-mode');
+            } else {
+                themeToggleBtn.classList.remove('dark-mode');
+                themeToggleBtn.classList.add('light-mode');
+            }
+        }
+        
+        // Sidebar toggle functionality
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const sidebar = document.getElementById('references-sidebar');
+        
+        toggleSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+        });
+        
+        closeSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+        });
+    });
+    </script>
+    <!-- Custom JS -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>
