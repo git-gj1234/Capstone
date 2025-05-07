@@ -3,7 +3,9 @@ import json
 import logging
 from LegalRetriever import LegalRetriever
 import google.generativeai as genai
+from typing import List, Dict
 import lancedb
+from company_docs_retreiver import relevant_refs_from_query
 
 # 🔧 CONFIGURATION
 config = {
@@ -11,10 +13,13 @@ config = {
     "comp_pdf": "CompaniesAct.pdf",
     "bank_pdf": "BankruptcyAct.pdf",
     "db_path": "./Data",
+    # Table names for LanceDB
     "comp_table": "CompaniesAct",
     "bank_table": "BankruptcyAct",
+    "constitution_table": "IndianConstitution",
+    # CSV path for Indian Constitution
+    "constitution_csv": "Indian_Constitution.csv"
 }
-
 # Initialize Google Gemini AI
 GEMINI_API_KEY = "AIzaSyBZym64q7Mhw_atOCA4qUX3MMTLEMeY5Tk"
 if GEMINI_API_KEY:
@@ -48,10 +53,12 @@ def get_chat_response(user_message):
         doc_summaries = []
         #RAG LOGIC
         retriever = LegalRetriever(top_k=3)
-        def query_legal_documents(query: str):
+        retriever = LegalRetriever(top_k=5)
+        def query_legal_documents(query: str) -> List[Dict]:
             tables = [
                 {"db_path": config["db_path"], "table_name": config["comp_table"]},
-                {"db_path": config["db_path"], "table_name": config["bank_table"]}        
+                {"db_path": config["db_path"], "table_name": config["bank_table"]},
+                {"db_path": config["db_path"], "table_name": config["constitution_table"]}
             ]
             return retriever.query_multiple(query, tables)
         legal_documents = []
@@ -75,6 +82,8 @@ def get_chat_response(user_message):
                 "type": remap[doc.source],
                 "summary": doc.content
             })
+        for doc in legal_documents:
+            print(doc.content)
         
         # Create the prompt with system instructions and context
         logging.info("Creating prompt for Gemini AI")
@@ -105,10 +114,34 @@ Available legal document context:
 Please analyze the question and provide an accurate response with properly scored legal references.
 Format your response as JSON with the keys described above.
 """
+        words = ["my", "system", "changes", "change"]
+        if any(word in user_message for word in words):
+            results = relevant_refs_from_query(user_message)
+            prompt = f"""
+You are a financial legal assistant specializing in financial regulations and laws. 
+Your task is to provide accurate information about financial legal matters.
+You will be provided with a set of possibly relevant legal clauses from the internal agreements of the organisation. 
+Given the user query, for every relevant piece of input,
+output necessary information or changes as requested by the user
+For each response, you must:
+1. Provide a clear, accurate answer based on actual financial laws and regulations
+Include ALL potentially relevant documents in your references list with their relevance scores.
+Be concise but thorough. Focus on factual legal information rather than opinions.
+
+Question: {user_message}
+
+Available legal document context:
+{json.dumps(results, indent=2)}
+
+Please analyze the question and provide an accurate response with properly strcutured outputs clearly explaining
+"""
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(prompt)
+            return response.text, results
 
         # Call Gemini API
-        logging.info("Calling Gemini API with gemini-1.5-pro model")
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        logging.info("Calling Gemini API with gemini-1.5-flash model")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         
         # Parse the response

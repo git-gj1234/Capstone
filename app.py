@@ -60,29 +60,29 @@ def chat():
         logging.info(f"Processing message of length {len(user_message)}")
         # Get response from chatbot
         bot_response, reference_ids = get_chat_response(user_message)
+        print("-"*67)
+        print(reference_ids)
         logging.info(f"Got response from chatbot (length: {len(bot_response)})")
         
         # Get legal references based on the response
         logging.info(f"Getting legal references for {len(reference_ids)} documents")
         # references = get_legal_references(reference_ids)
         # references = reference_ids
-        references = [
-            {
-                "content_preview": ref["chunk"][:300] if len(ref["chunk"])>300 else ref["chunk"],
-                "title": " ".join(
-                    part for part in [ref.get("part_title"), ref.get("chapter_title"), ref.get("section_title")]
-                    if part and str(part).lower() != "nan"
-                ).strip(),
-                "document_type":"Law",
-                "source": ref["source"],
-                "score":ref["score"],
-                "id":ref["id"],
-                "content":ref["chunk"]
-            }
-            for ref in reference_ids
-        ]
-        print
-        print(references[0].keys())
+        references = reference_ids#[
+        #     {
+        #         "content_preview": ref["chunk"][:300] if len(ref["chunk"])>300 else ref["chunk"],
+        #         "title": " ".join(
+        #             part for part in [ref.get("part_title"), ref.get("chapter_title"), ref.get("section_title")]
+        #             if part and str(part).lower() != "nan"
+        #         ).strip(),
+        #         "document_type":"Law",
+        #         "source": ref["source"],
+        #         "score":ref["score"],
+        #         "id":ref["id"],
+        #         "content":ref["chunk"]
+        #     }
+        #     for ref in reference_ids
+        # ]
         def sanitize_dict(d):
             return {
                 k: (None if isinstance(v, float) and math.isnan(v) else v)
