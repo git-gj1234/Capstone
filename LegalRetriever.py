@@ -40,8 +40,8 @@ class LegalRetriever:
 
         try:
             merged_df = pd.concat(all_results, ignore_index=True)
-            if "score" in merged_df.columns:
-                merged_df = merged_df.sort_values(by="score", ascending=False)
+            if "_distance" in merged_df.columns:
+                merged_df = merged_df.sort_values(by="_distance", ascending=True)
         except Exception as e:
             raise RuntimeError(f"Failed to process merged results: {str(e)}")
 

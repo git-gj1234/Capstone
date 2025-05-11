@@ -12,3 +12,11 @@ pyarrow
 voyageai
 langchain-google-genai
 PyMuPDF
+unstructured[pdf,local-inference]
+torch
+torchvision
+torchaudio
+langchain-experimental
+frontend
+tools
+langchain_huggingface
