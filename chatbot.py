@@ -2,6 +2,7 @@ import os
 import json
 import logging
 from LegalRetriever import LegalRetriever
+from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from typing import List, Dict
 import lancedb
@@ -9,17 +10,24 @@ from company_docs_retreiver import relevant_refs_from_query
 
 # 🔧 CONFIGURATION
 config = {
-    "model_name": "nlpaueb/legal-bert-base-uncased",
+    "model_name": "sentence-transformers/all-mpnet-base-v2", # Main embedder model
+    "semantic_chunker_model": "thenlper/gte-base", # Model for SemanticChunker
     "comp_pdf": "CompaniesAct.pdf",
     "bank_pdf": "BankruptcyAct.pdf",
     "db_path": "./Data",
+
     # Table names for LanceDB
     "comp_table": "CompaniesAct",
     "bank_table": "BankruptcyAct",
     "constitution_table": "IndianConstitution",
+
     # CSV path for Indian Constitution
     "constitution_csv": "Indian_Constitution.csv"
 }
+
+# Initialize the embedder
+embedder = SentenceTransformer(config["model_name"])
+
 # Initialize Google Gemini AI
 GEMINI_API_KEY = "AIzaSyBZym64q7Mhw_atOCA4qUX3MMTLEMeY5Tk"
 if GEMINI_API_KEY:
@@ -51,9 +59,10 @@ def get_chat_response(user_message):
         # Get all document IDs for context (from in-memory storage)
         logging.info(f"Preparing document summaries from {len(legal_documents)} documents")
         doc_summaries = []
-        #RAG LOGIC
-        retriever = LegalRetriever(top_k=3)
-        retriever = LegalRetriever(top_k=5)
+        
+        # Initialize LegalRetriever with the embedder instance
+        retriever = LegalRetriever(main_embedder_instance=embedder, top_k=5)
+        
         def query_legal_documents(query: str) -> List[Dict]:
             tables = [
                 {"db_path": config["db_path"], "table_name": config["comp_table"]},
