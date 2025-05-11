@@ -3,50 +3,56 @@ from legalbert_embedder import LegalBERTEmbedder
 import pandas as pd
 
 class LegalRetriever:
-    def __init__(self, top_k: int = 5):
-        self.model = LegalBERTEmbedder()
+    def __init__(self, main_embedder_instance, top_k: int = 5):
+        self.model = main_embedder_instance # Use the same embedder instance used for indexing
         self.top_k = top_k
         self.dbs = {}
 
     def _get_table(self, db_path: str, table_name: str):
-        if db_path not in self.dbs:
+        db_key = f"{db_path}_{table_name}" # Unique key for db connection + table
+        if db_key not in self.dbs:
             try:
-                self.dbs[db_path] = lancedb.connect(db_path)
+                db_conn = lancedb.connect(db_path)
+                self.dbs[db_key] = db_conn.open_table(table_name)
             except Exception as e:
-                raise RuntimeError(f"Failed to connect to DB at {db_path}: {str(e)}")
-        try:
-            return self.dbs[db_path].open_table(table_name)
-        except Exception as e:
-            raise RuntimeError(f"Failed to open table '{table_name}' in DB '{db_path}': {str(e)}")
+                raise RuntimeError(f"Failed to connect to DB at {db_path} or open table {table_name}: {str(e)}")
+        return self.dbs[db_key]
 
-    def query_multiple(self, query_text: str, tables: list[dict]) -> list:
+    def query_multiple(self, query_text: str, tables_to_search: list[dict]) -> list:
         try:
             query_vec = self.model.encode([query_text])[0].tolist()
         except Exception as e:
             raise RuntimeError(f"Failed to embed query: {str(e)}")
 
-        all_results = []
+        all_results_dfs = []
 
-        for tbl in tables:
+        for tbl_info in tables_to_search:
             try:
-                table = self._get_table(tbl["db_path"], tbl["table_name"])
-                df = table.search(query_vec).limit(self.top_k).to_df()
-                all_results.append(df)
+                table_obj = self._get_table(tbl_info["db_path"], tbl_info["table_name"])
+                df = table_obj.search(query_vec).limit(self.top_k).to_pandas()
+                all_results_dfs.append(df)
             except Exception as e:
-                print(f"Warning: Failed to query table '{tbl['table_name']}' in DB '{tbl['db_path']}': {str(e)}")
-
-        if not all_results:
+                print(f"Warning: Failed to query table '{tbl_info['table_name']}' in DB '{tbl_info['db_path']}': {str(e)}")
+        
+        if not all_results_dfs:
             return []
 
         try:
-            merged_df = pd.concat(all_results, ignore_index=True)
+            merged_df = pd.concat(all_results_dfs, ignore_index=True)
             if "_distance" in merged_df.columns:
                 merged_df = merged_df.sort_values(by="_distance", ascending=True)
+            else:
+                 print("Warning: '_distance' column not found in search results for sorting.")
         except Exception as e:
+            # If concat fails (e.g. empty list of dfs), return empty list or handle
+            if not all_results_dfs:
+                return []
             raise RuntimeError(f"Failed to process merged results: {str(e)}")
-
-        return [
-            {
+        
+        # Format results
+        output_results = []
+        for _, row in merged_df.head(self.top_k).iterrows(): # Ensure only top_k overall are returned
+            output_results.append({
                 "id": row.get("id"),
                 "chunk": row.get("chunk"),
                 "part_title": row.get("part_title"),
@@ -55,6 +61,5 @@ class LegalRetriever:
                 "page": row.get("page"),
                 "source": row.get("source"),
                 "score": row.get("_distance")
-            }
-            for _, row in merged_df.iterrows()
-        ][:self.top_k]
+            })
+        return output_results
